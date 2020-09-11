@@ -1,0 +1,21 @@
+.\nor_sdram_txt_sdram\objects\image_png.o: ..\..\emwin\png\IMAGE_PNG.c
+.\nor_sdram_txt_sdram\objects\image_png.o: ..\..\emwin\emWin_header\GUI.h
+.\nor_sdram_txt_sdram\objects\image_png.o: D:\Program Files\Keil_v5.30\ARM\ARMCC\Bin\..\include\stddef.h
+.\nor_sdram_txt_sdram\objects\image_png.o: ..\..\emwin\emWin_header\GUI_ConfDefaults.h
+.\nor_sdram_txt_sdram\objects\image_png.o: ..\..\emwin\emWin_Config\GUIConf.h
+.\nor_sdram_txt_sdram\objects\image_png.o: ..\..\emwin\emWin_header\GUI_Type.h
+.\nor_sdram_txt_sdram\objects\image_png.o: ..\..\emwin\emWin_header\LCD.h
+.\nor_sdram_txt_sdram\objects\image_png.o: ..\..\emwin\emWin_header\Global.h
+.\nor_sdram_txt_sdram\objects\image_png.o: ..\..\emwin\emWin_header\GUI_Version.h
+.\nor_sdram_txt_sdram\objects\image_png.o: ..\..\emwin\emWin_header\IMAGE_Private.h
+.\nor_sdram_txt_sdram\objects\image_png.o: ..\..\emwin\emWin_header\GUI_Private.h
+.\nor_sdram_txt_sdram\objects\image_png.o: ..\..\emwin\emWin_header\LCD_Protected.h
+.\nor_sdram_txt_sdram\objects\image_png.o: ..\..\emwin\emWin_header\GUI_Debug.h
+.\nor_sdram_txt_sdram\objects\image_png.o: ..\..\emwin\emWin_header\WM_GUI.h
+.\nor_sdram_txt_sdram\objects\image_png.o: ..\..\emwin\emWin_header\WM_Intern.h
+.\nor_sdram_txt_sdram\objects\image_png.o: ..\..\emwin\emWin_header\WM.h
+.\nor_sdram_txt_sdram\objects\image_png.o: ..\..\emwin\emWin_header\IMAGE.h
+.\nor_sdram_txt_sdram\objects\image_png.o: ..\..\emwin\emWin_header\DIALOG_Type.h
+.\nor_sdram_txt_sdram\objects\image_png.o: ..\..\emwin\emWin_header\WIDGET.h
+.\nor_sdram_txt_sdram\objects\image_png.o: ..\..\emwin\emWin_header\SCROLLBAR.h
+.\nor_sdram_txt_sdram\objects\image_png.o: ..\..\emwin\emWin_header\WIDGET.h

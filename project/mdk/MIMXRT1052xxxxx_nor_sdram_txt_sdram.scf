@@ -1,0 +1,170 @@
+#! armcc -E
+/*
+** ###################################################################
+**     Processors:          MIMXRT1052CVL5B
+**                          MIMXRT1052DVL6B
+**
+**     Compiler:            Keil ARM C/C++ Compiler
+**     Reference manual:    IMXRT1050RM Rev.1, 03/2018
+**     Version:             rev. 0.1, 2017-01-10
+**     Build:               b180131
+**
+**     Abstract:
+**         Linker file for the Keil ARM C/C++ Compiler
+**
+**     The Clear BSD License
+**     Copyright 2016 Freescale Semiconductor, Inc.
+**     Copyright 2016-2018 NXP
+**     All rights reserved.
+**
+**     Redistribution and use in source and binary forms, with or without
+**     modification, are permitted (subject to the limitations in the
+**     disclaimer below) provided that the following conditions are met:
+**
+**     * Redistributions of source code must retain the above copyright
+**       notice, this list of conditions and the following disclaimer.
+**
+**     * Redistributions in binary form must reproduce the above copyright
+**       notice, this list of conditions and the following disclaimer in the
+**       documentation and/or other materials provided with the distribution.
+**
+**     * Neither the name of the copyright holder nor the names of its
+**       contributors may be used to endorse or promote products derived from
+**       this software without specific prior written permission.
+**
+**     NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
+**     GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
+**     HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+**     WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+**     MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+**     DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+**     LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+**     CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+**     SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+**     BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+**     WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+**     OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+**     IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+**
+**     http:                 www.nxp.com
+**     mail:                 support@nxp.com
+**
+** ###################################################################
+*/
+
+;external flash configmust 
+#define m_flash_config_start           0x60000000  /*offset 0x0000*/
+#define m_flash_config_size            0x00001000
+
+;这一段放了三个段
+; 1.boot_hdr.ivt	   ->此处固定32Byte,所以BD的offset是固定的
+; 2.boot_hdr.boot_data ->Boot Data offset 0x0420/0x1020
+; 3.boot_hdr.dcd_data  ->DCD...(紧挨着BD的)
+#define m_ivt_start                    0x60001000   /*must offset 0x1000(XIP Flash) or 0x0400(Non-XIP Flash)*/
+#define m_ivt_size                     0x00001000
+
+;Application Binary段,前面8K给了IVT,BD,DCD,etc
+#define m_interrupts_start             0x60002000 /*must offset 0x2000*/
+#define m_interrupts_size              0x00000400
+
+#define m_text_start                   0x60002400
+#define m_text_size                    0x03FFDC00		
+;#define m_text_size 0x01FFDC00 也可以使用，因为Flash本来就是32M，并没有64M那么多
+
+;---------------------------------------------------------------------------------------------------------------------------------
+;在SDRAM中存放代码的空间：
+;中断向量表
+#define m_sdram_interrupts_start       0x80000000
+#define m_sdram_interrupts_size        0x00000400
+
+;SDRAM中的主体代码
+#define m_sdram_text_start             0x80000400
+#define m_sdram_text_size              0x003FFC00
+
+#define m_data_start                   0x80400000
+#define m_data_size                    0x01400000  
+;0x81400000到0x81C00000 的 8M供emwin动态内存
+
+#define m_ncache_start                 0x81C00000
+#define m_ncache_size                  0x00400000
+
+;DTCM，128KB，用来存放数据
+#define m_data2_start                  0x20000000
+#define m_data2_size                   0x00020000
+
+;OCRAM，256KB，用来存放数据
+#define m_data3_start                  0x20200000
+#define m_data3_size                   0x00040000
+
+/* Sizes */
+#if (defined(__stack_size__))
+  #define Stack_Size                   __stack_size__
+#else
+  #define Stack_Size                   0x0400
+#endif
+
+#if (defined(__heap_size__))
+  #define Heap_Size                    __heap_size__
+#else
+  #define Heap_Size                    0x0400
+#endif
+
+LR_m_rom_config m_flash_config_start m_flash_config_size {   ; load region size_region
+	RW_m_config_text m_flash_config_start m_flash_config_size { ; load address = execution address
+	* (.boot_hdr.conf, +FIRST) 									;[s]  1.external flash config,and
+	}
+}
+
+LR_m_rom_ivt m_ivt_start m_ivt_size {   ; load region size_region
+	RW_m_ivt_text m_ivt_start m_ivt_size { ; load address = execution address
+	* (.boot_hdr.ivt, +FIRST)   ;[must] 2.IVT,
+	* (.boot_hdr.boot_data)		;[must] 3.Boot Data 
+	* (.boot_hdr.dcd_data)		;[s]    4.DCD,such as :use to init SDRAM
+	}
+}
+
+;m_interrupts_start=0x60002000   m_text_start=0x60002400  name 0x60002000 (0x64000000-0x0400)
+LR_m_text m_interrupts_start m_text_start+m_text_size-m_interrupts_size {   ; load region size_region
+  
+  ;在FALSH中的中断向量表
+  VECTOR_ROM m_interrupts_start m_interrupts_size { ; load address = execution address
+    * (RESET,+FIRST)  ;把 RESET(在startup_MIMXRT1052.s中)段先加载到本加载域的起始地址
+								;[must]	5.Application Binray
+								;[s]	6.CSF 安全相关,此处没有
+								;[s]	7.KeyBlob 安全相关,此处没有
+  }
+  
+  ; 启动时运行的startup_mimxrt1052t和system_mimxrt1052中的代码要存放在FLASH中
+  ER_m_text m_text_start m_text_size { ; load address = execution address
+    * (InRoot$$Sections) ; * (InRoot$$Sections)主要作用COPY RW区到RAM，然后再RW区后面创建ZI区
+	startup_mimxrt1052.o(+RO)
+	system_mimxrt1052.o(+RO)
+  } 
+
+  ;	EMPTY表示这段空间留空，防止其它应用占用或编译提示warning
+  ; 这一段空出来存储中断向量表
+  VECTOR_RAM m_sdram_interrupts_start EMPTY m_sdram_interrupts_size { ;execution address
+   ;这部分内容由board.c文件中的CopyAndUseRAMVectorTable函数从VECTOR_ROM中复制得到
+   ;得到SDRAM版本的中断向量表
+  }
+  
+  ;存放主体程序的SDRAM空间，由__main函数从FLASH中加载
+  ER_m_ram_text m_sdram_text_start m_sdram_text_size { ;execution address
+    .ANY (+RO)
+  }  
+  
+  RW_m_data m_data_start m_data_size-Stack_Size-Heap_Size { ; RW data
+    .ANY (+RW +ZI)
+    *(m_usb_dma_init_data)
+    *(m_usb_dma_noninit_data)
+  }
+  ARM_LIB_HEAP +0 EMPTY Heap_Size {    ; Heap region growing up
+  }
+  ARM_LIB_STACK m_data_start+m_data_size EMPTY -Stack_Size { ; Stack region growing down
+  }
+  RW_m_ncache m_ncache_start m_ncache_size { ; ncache RW data
+    * (NonCacheable.init)
+    * (NonCacheable)
+  }
+}
+
